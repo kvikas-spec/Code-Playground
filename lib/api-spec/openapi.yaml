@@ -3,20 +3,25 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: JS Playground API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: code
+    description: Code execution
+  - name: problems
+    description: DSA problems
+  - name: snippets
+    description: Saved code snippets
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,13 +29,282 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /code/run:
+    post:
+      operationId: runCode
+      tags: [code]
+      summary: Execute JavaScript code
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CodeInput"
+      responses:
+        "200":
+          description: Execution result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CodeResult"
+
+  /problems:
+    get:
+      operationId: listProblems
+      tags: [problems]
+      summary: List all DSA problems
+      parameters:
+        - name: category
+          in: query
+          schema:
+            type: string
+        - name: difficulty
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of problems
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Problem"
+
+  /problems/{id}:
+    get:
+      operationId: getProblem
+      tags: [problems]
+      summary: Get a specific DSA problem
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Problem details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+        "404":
+          description: Problem not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /problems/stats:
+    get:
+      operationId: getProblemStats
+      tags: [problems]
+      summary: Get problem difficulty stats and category counts
+      responses:
+        "200":
+          description: Stats summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProblemStats"
+
+  /snippets:
+    get:
+      operationId: listSnippets
+      tags: [snippets]
+      summary: List saved code snippets
+      responses:
+        "200":
+          description: List of snippets
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Snippet"
+    post:
+      operationId: createSnippet
+      tags: [snippets]
+      summary: Save a code snippet
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SnippetInput"
+      responses:
+        "201":
+          description: Snippet created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Snippet"
+
+  /snippets/{id}:
+    get:
+      operationId: getSnippet
+      tags: [snippets]
+      summary: Get a saved snippet
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Snippet
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Snippet"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: deleteSnippet
+      tags: [snippets]
+      summary: Delete a saved snippet
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
 components:
   schemas:
     HealthStatus:
       type: object
+      required: [status]
       properties:
         status:
           type: string
-      required:
-        - status
 
+    CodeInput:
+      type: object
+      required: [code]
+      properties:
+        code:
+          type: string
+          description: JavaScript source code to execute
+
+    CodeResult:
+      type: object
+      required: [output, error, executionTime]
+      properties:
+        output:
+          type: string
+          description: Captured console output
+        error:
+          type: ["string", "null"]
+          description: Error message if execution failed
+        executionTime:
+          type: number
+          description: Execution time in milliseconds
+
+    Problem:
+      type: object
+      required: [id, title, difficulty, category, tags]
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        difficulty:
+          type: string
+          enum: [Easy, Medium, Hard]
+        category:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+
+    ProblemDetail:
+      type: object
+      required: [id, title, difficulty, category, tags, description, starterCode, testCases]
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        difficulty:
+          type: string
+          enum: [Easy, Medium, Hard]
+        category:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        description:
+          type: string
+        starterCode:
+          type: string
+        testCases:
+          type: array
+          items:
+            $ref: "#/components/schemas/TestCase"
+
+    TestCase:
+      type: object
+      required: [input, expected]
+      properties:
+        input:
+          type: string
+        expected:
+          type: string
+
+    ProblemStats:
+      type: object
+      required: [total, byDifficulty, byCategory]
+      properties:
+        total:
+          type: integer
+        byDifficulty:
+          type: object
+          additionalProperties:
+            type: integer
+        byCategory:
+          type: object
+          additionalProperties:
+            type: integer
+
+    Snippet:
+      type: object
+      required: [id, title, code, createdAt]
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        code:
+          type: string
+        createdAt:
+          type: string
+
+    SnippetInput:
+      type: object
+      required: [title, code]
+      properties:
+        title:
+          type: string
+        code:
+          type: string
+
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
