@@ -1,22 +1,6 @@
-export interface TestCase {
-  input: string;
-  expected: string;
-}
+import { db, problemsTable, testCasesTable } from "@workspace/db";
 
-export interface ProblemDetail {
-  id: string;
-  title: string;
-  difficulty: "Easy" | "Medium" | "Hard";
-  category: string;
-  tags: string[];
-  description: string;
-  starterCode: string;
-  testCases: TestCase[];
-}
-
-export type Problem = Pick<ProblemDetail, "id" | "title" | "difficulty" | "category" | "tags">;
-
-export const PROBLEMS: ProblemDetail[] = [
+const PROBLEMS = [
   {
     id: "two-sum",
     title: "Two Sum",
@@ -497,25 +481,45 @@ console.log(findMedianSortedArrays([1,2], [3,4]));    // 2.5
   },
 ];
 
-export function getProblems(category?: string, difficulty?: string): Problem[] {
-  let filtered = PROBLEMS;
-  if (category) filtered = filtered.filter((p) => p.category.toLowerCase() === category.toLowerCase());
-  if (difficulty) filtered = filtered.filter((p) => p.difficulty.toLowerCase() === difficulty.toLowerCase());
-  return filtered.map(({ id, title, difficulty, category, tags }) => ({ id, title, difficulty, category, tags }));
-}
+async function seed() {
+  console.log("Seeding problems...");
 
-export function getProblemById(id: string): ProblemDetail | undefined {
-  return PROBLEMS.find((p) => p.id === id);
-}
+  for (const problem of PROBLEMS) {
+    const { testCases, ...problemData } = problem;
 
-export function getProblemStats() {
-  const byDifficulty: Record<string, number> = {};
-  const byCategory: Record<string, number> = {};
+    await db
+      .insert(problemsTable)
+      .values(problemData)
+      .onConflictDoUpdate({
+        target: problemsTable.id,
+        set: {
+          title: problemData.title,
+          difficulty: problemData.difficulty,
+          category: problemData.category,
+          tags: problemData.tags,
+          description: problemData.description,
+          starterCode: problemData.starterCode,
+        },
+      });
 
-  for (const p of PROBLEMS) {
-    byDifficulty[p.difficulty] = (byDifficulty[p.difficulty] ?? 0) + 1;
-    byCategory[p.category] = (byCategory[p.category] ?? 0) + 1;
+    // Delete existing test cases and re-insert
+    const { eq } = await import("drizzle-orm");
+    await db.delete(testCasesTable).where(eq(testCasesTable.problemId, problem.id));
+
+    if (testCases.length > 0) {
+      await db.insert(testCasesTable).values(
+        testCases.map((tc) => ({ problemId: problem.id, input: tc.input, expected: tc.expected }))
+      );
+    }
+
+    console.log(`  + ${problem.title}`);
   }
 
-  return { total: PROBLEMS.length, byDifficulty, byCategory };
+  console.log(`Done — seeded ${PROBLEMS.length} problems.`);
+  process.exit(0);
 }
+
+seed().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});
