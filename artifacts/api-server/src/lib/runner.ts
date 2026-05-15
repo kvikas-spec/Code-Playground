@@ -1,4 +1,5 @@
 import vm from "vm";
+import { buildSandboxRequire } from "./pkg-manager";
 
 export interface RunResult {
   output: string;
@@ -47,6 +48,7 @@ export function runJavaScript(code: string): RunResult {
 
   const sandbox = {
     console: consoleMock,
+    require: buildSandboxRequire(),
     setTimeout: undefined,
     setInterval: undefined,
     setImmediate: undefined,
@@ -54,7 +56,6 @@ export function runJavaScript(code: string): RunResult {
     clearInterval: undefined,
     clearImmediate: undefined,
     fetch: undefined,
-    require: undefined,
     process: {
       env: {},
       argv: [],

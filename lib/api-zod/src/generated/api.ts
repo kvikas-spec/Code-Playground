@@ -31,6 +31,32 @@ export const RunCodeResponse = zod.object({
 
 
 /**
+ * @summary List installed npm packages
+ */
+export const ListPackagesResponseItem = zod.object({
+  "name": zod.string(),
+  "version": zod.string()
+})
+export const ListPackagesResponse = zod.array(ListPackagesResponseItem)
+
+
+/**
+ * @summary Install an npm package
+ */
+export const InstallPackageBody = zod.object({
+  "name": zod.string().describe('npm package name (e.g. \"lodash\" or \"lodash@4.17.21\")')
+})
+
+
+/**
+ * @summary Remove an installed package
+ */
+export const RemovePackageParams = zod.object({
+  "name": zod.coerce.string()
+})
+
+
+/**
  * @summary List all DSA problems
  */
 export const ListProblemsQueryParams = zod.object({

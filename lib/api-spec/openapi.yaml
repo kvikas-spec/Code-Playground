@@ -16,6 +16,8 @@ tags:
     description: DSA problems
   - name: snippets
     description: Saved code snippets
+  - name: packages
+    description: NPM package management
 paths:
   /healthz:
     get:
@@ -48,6 +50,65 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/CodeResult"
+
+  /packages:
+    get:
+      operationId: listPackages
+      tags: [packages]
+      summary: List installed npm packages
+      responses:
+        "200":
+          description: List of installed packages
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/NpmPackage"
+    post:
+      operationId: installPackage
+      tags: [packages]
+      summary: Install an npm package
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PackageInput"
+      responses:
+        "201":
+          description: Package installed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NpmPackage"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /packages/{name}:
+    delete:
+      operationId: removePackage
+      tags: [packages]
+      summary: Remove an installed package
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Removed
+        "400":
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /problems:
     get:
@@ -301,6 +362,23 @@ components:
           type: string
         code:
           type: string
+
+    NpmPackage:
+      type: object
+      required: [name, version]
+      properties:
+        name:
+          type: string
+        version:
+          type: string
+
+    PackageInput:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          description: npm package name (e.g. "lodash" or "lodash@4.17.21")
 
     ErrorResponse:
       type: object

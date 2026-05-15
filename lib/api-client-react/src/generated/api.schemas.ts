@@ -90,6 +90,16 @@ export interface SnippetInput {
   code: string;
 }
 
+export interface NpmPackage {
+  name: string;
+  version: string;
+}
+
+export interface PackageInput {
+  /** npm package name (e.g. "lodash" or "lodash@4.17.21") */
+  name: string;
+}
+
 export interface ErrorResponse {
   error: string;
 }

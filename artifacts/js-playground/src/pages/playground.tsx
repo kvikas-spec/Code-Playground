@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
 import Editor from "@monaco-editor/react";
-import { Play, Save, Trash2, ChevronDown, Loader2, Clock } from "lucide-react";
-import { useRunCode, useCreateSnippet, useListSnippets, useDeleteSnippet, getListSnippetsQueryKey } from "@workspace/api-client-react";
+import { Play, Save, Trash2, ChevronDown, Loader2, Clock, Package } from "lucide-react";
+import { useRunCode, useCreateSnippet, useListSnippets, useDeleteSnippet, getListSnippetsQueryKey, useListPackages, getListPackagesQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -22,6 +22,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import PackagesPanel from "@/components/packages-panel";
 
 const TEMPLATES = [
   {
@@ -114,6 +115,7 @@ export default function Playground() {
   const [hasError, setHasError] = useState(false);
   const [execTime, setExecTime] = useState<number | null>(null);
   const [saveOpen, setSaveOpen] = useState(false);
+  const [packagesOpen, setPackagesOpen] = useState(false);
   const [snippetTitle, setSnippetTitle] = useState("");
   const editorRef = useRef<unknown>(null);
   const { toast } = useToast();
@@ -123,6 +125,7 @@ export default function Playground() {
   const createSnippet = useCreateSnippet();
   const deleteSnippet = useDeleteSnippet();
   const { data: snippets } = useListSnippets();
+  const { data: packages } = useListPackages({ query: { queryKey: getListPackagesQueryKey() } });
 
   const handleRun = () => {
     runCode.mutate(
@@ -259,6 +262,22 @@ export default function Playground() {
           variant="outline"
           size="sm"
           className="gap-1.5 text-xs"
+          onClick={() => setPackagesOpen(true)}
+          data-testid="button-packages"
+        >
+          <Package className="w-3.5 h-3.5" />
+          Packages
+          {packages && packages.length > 0 && (
+            <span className="ml-0.5 bg-primary text-primary-foreground text-[10px] font-bold px-1 py-px rounded-full leading-none">
+              {packages.length}
+            </span>
+          )}
+        </Button>
+
+        <Button
+          variant="outline"
+          size="sm"
+          className="gap-1.5 text-xs"
           onClick={() => { setSaveOpen(true); setSnippetTitle(""); }}
           data-testid="button-save"
         >
@@ -329,6 +348,9 @@ export default function Playground() {
           </div>
         </div>
       </div>
+
+      {/* Packages panel */}
+      <PackagesPanel open={packagesOpen} onClose={() => setPackagesOpen(false)} />
 
       {/* Save dialog */}
       <Dialog open={saveOpen} onOpenChange={setSaveOpen}>

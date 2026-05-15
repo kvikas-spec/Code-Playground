@@ -25,6 +25,8 @@ import type {
   ErrorResponse,
   HealthStatus,
   ListProblemsParams,
+  NpmPackage,
+  PackageInput,
   Problem,
   ProblemDetail,
   ProblemStats,
@@ -190,6 +192,224 @@ export const useRunCode = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getRunCodeMutationOptions(options));
+    }
+
+export const getListPackagesUrl = () => {
+
+
+
+
+  return `/api/packages`
+}
+
+/**
+ * @summary List installed npm packages
+ */
+export const listPackages = async ( options?: RequestInit): Promise<NpmPackage[]> => {
+
+  return customFetch<NpmPackage[]>(getListPackagesUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListPackagesQueryKey = () => {
+    return [
+    `/api/packages`
+    ] as const;
+    }
+
+
+export const getListPackagesQueryOptions = <TData = Awaited<ReturnType<typeof listPackages>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listPackages>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListPackagesQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listPackages>>> = ({ signal }) => listPackages({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listPackages>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListPackagesQueryResult = NonNullable<Awaited<ReturnType<typeof listPackages>>>
+export type ListPackagesQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List installed npm packages
+ */
+
+export function useListPackages<TData = Awaited<ReturnType<typeof listPackages>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listPackages>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListPackagesQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getInstallPackageUrl = () => {
+
+
+
+
+  return `/api/packages`
+}
+
+/**
+ * @summary Install an npm package
+ */
+export const installPackage = async (packageInput: PackageInput, options?: RequestInit): Promise<NpmPackage> => {
+
+  return customFetch<NpmPackage>(getInstallPackageUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      packageInput,)
+  }
+);}
+
+
+
+
+export const getInstallPackageMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof installPackage>>, TError,{data: BodyType<PackageInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof installPackage>>, TError,{data: BodyType<PackageInput>}, TContext> => {
+
+const mutationKey = ['installPackage'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof installPackage>>, {data: BodyType<PackageInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  installPackage(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type InstallPackageMutationResult = NonNullable<Awaited<ReturnType<typeof installPackage>>>
+    export type InstallPackageMutationBody = BodyType<PackageInput>
+    export type InstallPackageMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Install an npm package
+ */
+export const useInstallPackage = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof installPackage>>, TError,{data: BodyType<PackageInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof installPackage>>,
+        TError,
+        {data: BodyType<PackageInput>},
+        TContext
+      > => {
+      return useMutation(getInstallPackageMutationOptions(options));
+    }
+
+export const getRemovePackageUrl = (name: string,) => {
+
+
+
+
+  return `/api/packages/${name}`
+}
+
+/**
+ * @summary Remove an installed package
+ */
+export const removePackage = async (name: string, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getRemovePackageUrl(name),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getRemovePackageMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof removePackage>>, TError,{name: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof removePackage>>, TError,{name: string}, TContext> => {
+
+const mutationKey = ['removePackage'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof removePackage>>, {name: string}> = (props) => {
+          const {name} = props ?? {};
+
+          return  removePackage(name,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RemovePackageMutationResult = NonNullable<Awaited<ReturnType<typeof removePackage>>>
+
+    export type RemovePackageMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Remove an installed package
+ */
+export const useRemovePackage = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof removePackage>>, TError,{name: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof removePackage>>,
+        TError,
+        {name: string},
+        TContext
+      > => {
+      return useMutation(getRemovePackageMutationOptions(options));
     }
 
 export const getListProblemsUrl = (params?: ListProblemsParams,) => {

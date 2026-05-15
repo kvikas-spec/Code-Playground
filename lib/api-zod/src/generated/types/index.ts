@@ -11,6 +11,8 @@ export * from './codeResult';
 export * from './errorResponse';
 export * from './healthStatus';
 export * from './listProblemsParams';
+export * from './npmPackage';
+export * from './packageInput';
 export * from './problem';
 export * from './problemDetail';
 export * from './problemDetailDifficulty';
