@@ -109,13 +109,28 @@ export const GetProblemStatsResponse = zod.object({
 /**
  * @summary List saved code snippets
  */
-export const ListSnippetsResponseItem = zod.object({
+export const listSnippetsQueryLimitDefault = 20;
+export const listSnippetsQueryLimitMax = 50;
+
+export const listSnippetsQueryOffsetDefault = 0;
+export const listSnippetsQueryOffsetMin = 0;
+
+
+
+export const ListSnippetsQueryParams = zod.object({
+  "limit": zod.coerce.number().min(1).max(listSnippetsQueryLimitMax).default(listSnippetsQueryLimitDefault),
+  "offset": zod.coerce.number().min(listSnippetsQueryOffsetMin).default(listSnippetsQueryOffsetDefault)
+})
+
+export const ListSnippetsResponse = zod.object({
+  "items": zod.array(zod.object({
   "id": zod.number(),
   "title": zod.string(),
   "code": zod.string(),
   "createdAt": zod.string()
+})),
+  "nextOffset": zod.number().nullable()
 })
-export const ListSnippetsResponse = zod.array(ListSnippetsResponseItem)
 
 
 /**

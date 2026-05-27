@@ -151,7 +151,7 @@ export default function Playground({ snippetId }: PlaygroundProps) {
     isError: isSnippetError,
   } = useGetSnippet(snippetId ?? 0);
   const { data: packages } = useListPackages({ query: { queryKey: getListPackagesQueryKey() } });
-  const savedSnippets: Snippet[] = Array.isArray(snippets) ? snippets : [];
+  const savedSnippets: Snippet[] = snippets?.items ?? [];
 
   useEffect(() => {
     if (!openedSnippet) return;

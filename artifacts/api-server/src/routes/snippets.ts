@@ -5,18 +5,33 @@ import {
   CreateSnippetBody,
   DeleteSnippetParams,
   GetSnippetParams,
+  ListSnippetsQueryParams,
   UpdateSnippetBody,
   UpdateSnippetParams,
 } from "@workspace/api-zod";
 
 const router: IRouter = Router();
 
-router.get("/snippets", async (_req, res): Promise<void> => {
+router.get("/snippets", async (req, res): Promise<void> => {
+  const params = ListSnippetsQueryParams.safeParse(req.query);
+  if (!params.success) {
+    res.status(400).json({ error: params.error.message });
+    return;
+  }
+
+  const { limit, offset } = params.data;
   const snippets = await db
     .select()
     .from(snippetsTable)
-    .orderBy(snippetsTable.createdAt);
-  res.json(snippets);
+    .orderBy(snippetsTable.createdAt)
+    .limit(limit + 1)
+    .offset(offset);
+
+  const items = snippets.slice(0, limit);
+  res.json({
+    items,
+    nextOffset: snippets.length > limit ? offset + limit : null,
+  });
 });
 
 router.post("/snippets", async (req, res): Promise<void> => {

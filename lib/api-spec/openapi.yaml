@@ -177,15 +177,29 @@ paths:
       operationId: listSnippets
       tags: [snippets]
       summary: List saved code snippets
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 20
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
       responses:
         "200":
-          description: List of snippets
+          description: Page of snippets
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/Snippet"
+                $ref: "#/components/schemas/SnippetPage"
     post:
       operationId: createSnippet
       tags: [snippets]
@@ -391,6 +405,17 @@ components:
           type: string
         code:
           type: string
+
+    SnippetPage:
+      type: object
+      required: [items, nextOffset]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Snippet"
+        nextOffset:
+          type: ["integer", "null"]
 
     NpmPackage:
       type: object

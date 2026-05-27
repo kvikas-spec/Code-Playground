@@ -1,7 +1,12 @@
+import { useEffect, useMemo, useRef } from "react";
 import { useLocation } from "wouter";
 import { Bookmark, Trash2, ExternalLink, Plus, Loader2, Clock } from "lucide-react";
-import { useListSnippets, useDeleteSnippet, getListSnippetsQueryKey } from "@workspace/api-client-react";
-import { useQueryClient } from "@tanstack/react-query";
+import {
+  getListSnippetsQueryKey,
+  listSnippets,
+  useDeleteSnippet,
+} from "@workspace/api-client-react";
+import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -16,7 +21,9 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import type { Snippet } from "@workspace/api-client-react";
+import type { Snippet, SnippetPage } from "@workspace/api-client-react";
+
+const PAGE_SIZE = 5;
 
 function formatDate(iso: string) {
   const d = new Date(iso);
@@ -27,10 +34,45 @@ export default function Snippets() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const loadMoreRef = useRef<HTMLDivElement>(null);
 
-  const { data: snippets, isLoading } = useListSnippets();
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading,
+  } = useInfiniteQuery<SnippetPage>({
+    queryKey: getListSnippetsQueryKey(),
+    queryFn: ({ pageParam }) =>
+      listSnippets({ limit: PAGE_SIZE, offset: Number(pageParam) }),
+    initialPageParam: 0,
+    getNextPageParam: (lastPage) => lastPage.nextOffset ?? undefined,
+  });
   const deleteSnippet = useDeleteSnippet();
-  const savedSnippets: Snippet[] = Array.isArray(snippets) ? snippets : [];
+  const savedSnippets: Snippet[] = useMemo(
+    () => data?.pages.flatMap((page) => page.items) ?? [],
+    [data]
+  );
+
+  useEffect(() => {
+    const sentinel = loadMoreRef.current;
+    const root = scrollContainerRef.current;
+    if (!sentinel || !root || !hasNextPage) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting && hasNextPage && !isFetchingNextPage) {
+          fetchNextPage();
+        }
+      },
+      { root, rootMargin: "160px" }
+    );
+
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
 
   const handleDelete = (id: number, title: string) => {
     deleteSnippet.mutate(
@@ -72,7 +114,7 @@ export default function Snippets() {
         </Button>
       </div>
 
-      <div className="flex-1 overflow-auto">
+      <div ref={scrollContainerRef} className="flex-1 overflow-auto">
         {isLoading ? (
           <div className="divide-y divide-border">
             {Array.from({ length: 4 }).map((_, i) => (
@@ -172,6 +214,11 @@ export default function Snippets() {
                 </div>
               </div>
             ))}
+            <div ref={loadMoreRef} className="flex h-12 items-center justify-center">
+              {isFetchingNextPage && (
+                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+              )}
+            </div>
           </div>
         )}
       </div>

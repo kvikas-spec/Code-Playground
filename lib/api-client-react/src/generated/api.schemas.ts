@@ -90,6 +90,12 @@ export interface SnippetInput {
   code: string;
 }
 
+export interface SnippetPage {
+  items: Snippet[];
+  /** @nullable */
+  nextOffset: number | null;
+}
+
 export interface NpmPackage {
   name: string;
   version: string;
@@ -107,5 +113,17 @@ export interface ErrorResponse {
 export type ListProblemsParams = {
 category?: string;
 difficulty?: string;
+};
+
+export type ListSnippetsParams = {
+/**
+ * @minimum 1
+ * @maximum 50
+ */
+limit?: number;
+/**
+ * @minimum 0
+ */
+offset?: number;
 };
 

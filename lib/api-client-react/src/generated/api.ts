@@ -25,13 +25,15 @@ import type {
   ErrorResponse,
   HealthStatus,
   ListProblemsParams,
+  ListSnippetsParams,
   NpmPackage,
   PackageInput,
   Problem,
   ProblemDetail,
   ProblemStats,
   Snippet,
-  SnippetInput
+  SnippetInput,
+  SnippetPage
 } from './api.schemas';
 
 import { customFetch } from '../custom-fetch';
@@ -650,20 +652,27 @@ export function useGetProblemStats<TData = Awaited<ReturnType<typeof getProblemS
 
 
 
-export const getListSnippetsUrl = () => {
+export const getListSnippetsUrl = (params?: ListSnippetsParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
 
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
 
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/api/snippets`
+  return stringifiedParams.length > 0 ? `/api/snippets?${stringifiedParams}` : `/api/snippets`
 }
 
 /**
  * @summary List saved code snippets
  */
-export const listSnippets = async ( options?: RequestInit): Promise<Snippet[]> => {
+export const listSnippets = async (params?: ListSnippetsParams, options?: RequestInit): Promise<SnippetPage> => {
 
-  return customFetch<Snippet[]>(getListSnippetsUrl(),
+  return customFetch<SnippetPage>(getListSnippetsUrl(params),
   {
     ...options,
     method: 'GET'
@@ -676,23 +685,23 @@ export const listSnippets = async ( options?: RequestInit): Promise<Snippet[]> =
 
 
 
-export const getListSnippetsQueryKey = () => {
+export const getListSnippetsQueryKey = (params?: ListSnippetsParams,) => {
     return [
-    `/api/snippets`
+    `/api/snippets`, ...(params ? [params] : [])
     ] as const;
     }
 
 
-export const getListSnippetsQueryOptions = <TData = Awaited<ReturnType<typeof listSnippets>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listSnippets>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getListSnippetsQueryOptions = <TData = Awaited<ReturnType<typeof listSnippets>>, TError = ErrorType<unknown>>(params?: ListSnippetsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listSnippets>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getListSnippetsQueryKey();
+  const queryKey =  queryOptions?.queryKey ?? getListSnippetsQueryKey(params);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof listSnippets>>> = ({ signal }) => listSnippets({ signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listSnippets>>> = ({ signal }) => listSnippets(params, { signal, ...requestOptions });
 
 
 
@@ -710,11 +719,11 @@ export type ListSnippetsQueryError = ErrorType<unknown>
  */
 
 export function useListSnippets<TData = Awaited<ReturnType<typeof listSnippets>>, TError = ErrorType<unknown>>(
-  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listSnippets>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+ params?: ListSnippetsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listSnippets>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
-  const queryOptions = getListSnippetsQueryOptions(options)
+  const queryOptions = getListSnippetsQueryOptions(params,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 
