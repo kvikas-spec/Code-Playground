@@ -22,10 +22,15 @@ function Router() {
   return (
     <Layout>
       <Switch>
-        <Route path="/" component={Playground} />
+        <Route path="/">
+          {() => <Playground />}
+        </Route>
         <Route path="/problems" component={Problems} />
         <Route path="/problems/:id">
           {(params) => <ProblemDetail params={params} />}
+        </Route>
+        <Route path="/snippets/:id">
+          {(params) => <Playground snippetId={Number(params.id)} />}
         </Route>
         <Route path="/snippets" component={Snippets} />
         <Route component={NotFound} />

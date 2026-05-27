@@ -33,9 +33,8 @@ export default function Snippets() {
     );
   };
 
-  const handleOpen = (code: string) => {
-    sessionStorage.setItem("playground-code", code);
-    setLocation("/");
+  const handleOpen = (id: number) => {
+    setLocation(`/snippets/${id}`);
   };
 
   return (
@@ -116,7 +115,7 @@ export default function Snippets() {
                       variant="ghost"
                       size="sm"
                       className="h-7 w-7 p-0"
-                      onClick={() => handleOpen(snippet.code)}
+                      onClick={() => handleOpen(snippet.id)}
                       title="Open in Playground"
                       data-testid={`snippet-open-${snippet.id}`}
                     >

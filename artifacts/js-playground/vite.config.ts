@@ -78,8 +78,8 @@ export default defineConfig({
   server: {
     proxy: {
       // '/api': 'http://10.0.54.106:8081'
-      // '/api': 'http://localhost:8081'
-      '/api':'http://10.0.53.162:8081'
+      '/api': 'http://localhost:8081'
+      // '/api':'http://10.0.53.162:8081'
     }
   },
   preview: {

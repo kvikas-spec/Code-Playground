@@ -1,7 +1,16 @@
-import { useState, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import Editor from "@monaco-editor/react";
 import { Play, Save, Trash2, ChevronDown, Loader2, Clock, Package } from "lucide-react";
-import { useRunCode, useCreateSnippet, useListSnippets, useDeleteSnippet, getListSnippetsQueryKey, useListPackages, getListPackagesQueryKey } from "@workspace/api-client-react";
+import {
+  getListPackagesQueryKey,
+  getListSnippetsQueryKey,
+  useCreateSnippet,
+  useDeleteSnippet,
+  useGetSnippet,
+  useListPackages,
+  useListSnippets,
+  useRunCode,
+} from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -110,7 +119,11 @@ console.log("Sorted:", mergeSort(arr));
   },
 ];
 
-export default function Playground() {
+type PlaygroundProps = {
+  snippetId?: number;
+};
+
+export default function Playground({ snippetId }: PlaygroundProps) {
   const [code, setCode] = useState(TEMPLATES[0].code);
   const [output, setOutput] = useState("");
   const [hasError, setHasError] = useState(false);
@@ -126,8 +139,21 @@ export default function Playground() {
   const createSnippet = useCreateSnippet();
   const deleteSnippet = useDeleteSnippet();
   const { data: snippets } = useListSnippets();
+  const {
+    data: openedSnippet,
+    isLoading: isSnippetLoading,
+    isError: isSnippetError,
+  } = useGetSnippet(snippetId ?? 0);
   const { data: packages } = useListPackages({ query: { queryKey: getListPackagesQueryKey() } });
   const savedSnippets: Snippet[] = Array.isArray(snippets) ? snippets : [];
+
+  useEffect(() => {
+    if (!openedSnippet) return;
+    setCode(openedSnippet.code);
+    setOutput("");
+    setExecTime(null);
+    setHasError(false);
+  }, [openedSnippet]);
 
   const handleRun = () => {
     runCode.mutate(
@@ -204,8 +230,17 @@ export default function Playground() {
         </Button>
 
         <span className="text-xs text-muted-foreground hidden sm:block">
-          Ctrl+Enter to run
+          {isSnippetLoading
+            ? "Loading snippet..."
+            : openedSnippet
+              ? openedSnippet.title
+              : "Ctrl+Enter to run"}
         </span>
+        {isSnippetError && (
+          <span className="text-xs text-destructive hidden sm:block">
+            Snippet not found
+          </span>
+        )}
 
         <div className="flex-1" />
 
