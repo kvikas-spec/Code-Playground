@@ -5,6 +5,17 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import type { Snippet } from "@workspace/api-client-react";
 
 function formatDate(iso: string) {
@@ -121,21 +132,42 @@ export default function Snippets() {
                     >
                       <ExternalLink className="w-3.5 h-3.5" />
                     </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
-                      onClick={() => handleDelete(snippet.id, snippet.title)}
-                      disabled={deleteSnippet.isPending}
-                      title="Delete snippet"
-                      data-testid={`snippet-delete-${snippet.id}`}
-                    >
-                      {deleteSnippet.isPending ? (
-                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      ) : (
-                        <Trash2 className="w-3.5 h-3.5" />
-                      )}
-                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
+                          disabled={deleteSnippet.isPending}
+                          title="Delete snippet"
+                          data-testid={`snippet-delete-${snippet.id}`}
+                        >
+                          {deleteSnippet.isPending ? (
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          ) : (
+                            <Trash2 className="w-3.5 h-3.5" />
+                          )}
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete snippet?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This will permanently delete "{snippet.title}".
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            onClick={() => handleDelete(snippet.id, snippet.title)}
+                            data-testid={`snippet-delete-confirm-${snippet.id}`}
+                          >
+                            Delete
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </div>
                 </div>
               </div>

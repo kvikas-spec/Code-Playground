@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState } from "react";
-import Editor from "@monaco-editor/react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import Editor, { type OnMount } from "@monaco-editor/react";
 import { Play, Save, Trash2, ChevronDown, Loader2, Clock, Package } from "lucide-react";
 import {
+  getGetSnippetQueryKey,
   getListPackagesQueryKey,
   getListSnippetsQueryKey,
   useCreateSnippet,
@@ -10,6 +11,7 @@ import {
   useListPackages,
   useListSnippets,
   useRunCode,
+  useUpdateSnippet,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
@@ -33,6 +35,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import PackagesPanel from "@/components/packages-panel";
 import type { Snippet } from "@workspace/api-client-react";
+import { useLocation } from "wouter";
 
 const TEMPLATES = [
   {
@@ -124,6 +127,7 @@ type PlaygroundProps = {
 };
 
 export default function Playground({ snippetId }: PlaygroundProps) {
+  const [, setLocation] = useLocation();
   const [code, setCode] = useState(TEMPLATES[0].code);
   const [output, setOutput] = useState("");
   const [hasError, setHasError] = useState(false);
@@ -132,11 +136,13 @@ export default function Playground({ snippetId }: PlaygroundProps) {
   const [packagesOpen, setPackagesOpen] = useState(false);
   const [snippetTitle, setSnippetTitle] = useState("");
   const editorRef = useRef<unknown>(null);
+  const primarySaveRef = useRef<() => void>(() => { });
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const runCode = useRunCode();
   const createSnippet = useCreateSnippet();
+  const updateSnippet = useUpdateSnippet();
   const deleteSnippet = useDeleteSnippet();
   const { data: snippets } = useListSnippets();
   const {
@@ -154,6 +160,24 @@ export default function Playground({ snippetId }: PlaygroundProps) {
     setExecTime(null);
     setHasError(false);
   }, [openedSnippet]);
+
+  const handleUpdateSnippet = useCallback(() => {
+    if (!openedSnippet || updateSnippet.isPending) return;
+
+    updateSnippet.mutate(
+      { id: openedSnippet.id, data: { title: openedSnippet.title, code } },
+      {
+        onSuccess: (snippet) => {
+          queryClient.setQueryData(getGetSnippetQueryKey(snippet.id), snippet);
+          queryClient.invalidateQueries({ queryKey: getListSnippetsQueryKey() });
+          toast({ title: "Snippet updated" });
+        },
+        onError: () => {
+          toast({ title: "Failed to update snippet", variant: "destructive" });
+        },
+      }
+    );
+  }, [code, openedSnippet, queryClient, toast, updateSnippet]);
 
   const handleRun = () => {
     runCode.mutate(
@@ -192,6 +216,20 @@ export default function Playground({ snippetId }: PlaygroundProps) {
     );
   };
 
+  const handlePrimarySave = useCallback(() => {
+    if (openedSnippet) {
+      handleUpdateSnippet();
+      return;
+    }
+
+    setSaveOpen(true);
+    setSnippetTitle("");
+  }, [handleUpdateSnippet, openedSnippet]);
+
+  useEffect(() => {
+    primarySaveRef.current = handlePrimarySave;
+  }, [handlePrimarySave]);
+
   const handleDeleteSnippet = (id: number) => {
     deleteSnippet.mutate(
       { id },
@@ -209,7 +247,22 @@ export default function Playground({ snippetId }: PlaygroundProps) {
       e.preventDefault();
       handleRun();
     }
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") {
+      e.preventDefault();
+      handlePrimarySave();
+    }
   };
+
+  const handleEditorMount: OnMount = (editor, monaco) => {
+    editorRef.current = editor;
+    editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {
+      primarySaveRef.current();
+    });
+  };
+  const handleOpen = (id: number) => {
+    setLocation(`/snippets/${id}`);
+  };
+
   return (
     <div className="flex flex-col h-full" onKeyDown={handleKeyDown}>
       {/* Toolbar */}
@@ -265,7 +318,7 @@ export default function Playground({ snippetId }: PlaygroundProps) {
                 {t.label}
               </DropdownMenuItem>
             ))}
-            {savedSnippets.length > 0 && (
+            {/* {savedSnippets.length > 0 && (
               <>
                 <DropdownMenuSeparator />
                 <DropdownMenuLabel className="text-xs text-muted-foreground">Saved snippets</DropdownMenuLabel>
@@ -274,13 +327,16 @@ export default function Playground({ snippetId }: PlaygroundProps) {
                     key={s.id}
                     className="flex items-center justify-between text-sm group"
                     data-testid={`snippet-load-${s.id}`}
-                    onSelect={() => setCode(s.code)}
+
+                    onSelect={() => handleOpen(s.id)}
+                  // onSelect={() => setCode(s.code)}
                   >
                     <span className="truncate">{s.title}</span>
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
                         handleDeleteSnippet(s.id);
+                        // handleOpen(s.id)
                       }}
                       className="opacity-0 group-hover:opacity-100 ml-2 text-muted-foreground hover:text-destructive transition-opacity"
                       data-testid={`snippet-delete-${s.id}`}
@@ -290,7 +346,7 @@ export default function Playground({ snippetId }: PlaygroundProps) {
                   </DropdownMenuItem>
                 ))}
               </>
-            )}
+            )} */}
           </DropdownMenuContent>
         </DropdownMenu>
 
@@ -314,11 +370,16 @@ export default function Playground({ snippetId }: PlaygroundProps) {
           variant="outline"
           size="sm"
           className="gap-1.5 text-xs"
-          onClick={() => { setSaveOpen(true); setSnippetTitle(""); }}
+          onClick={handlePrimarySave}
+          disabled={Boolean(openedSnippet && updateSnippet.isPending)}
           data-testid="button-save"
         >
-          <Save className="w-3.5 h-3.5" />
-          Save
+          {openedSnippet && updateSnippet.isPending ? (
+            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+          ) : (
+            <Save className="w-3.5 h-3.5" />
+          )}
+          {openedSnippet ? "Update" : "Save"}
         </Button>
       </div>
 
@@ -332,7 +393,7 @@ export default function Playground({ snippetId }: PlaygroundProps) {
             value={code}
             onChange={(val) => setCode(val ?? "")}
             theme="vs-dark"
-            onMount={(editor) => { editorRef.current = editor; }}
+            onMount={handleEditorMount}
             options={{
               fontSize: 13,
               fontFamily: "'JetBrains Mono', 'Fira Code', Menlo, monospace",
@@ -369,9 +430,8 @@ export default function Playground({ snippetId }: PlaygroundProps) {
               </div>
             ) : output ? (
               <pre
-                className={`whitespace-pre-wrap text-sm leading-relaxed ${
-                  hasError ? "text-destructive" : "text-foreground"
-                }`}
+                className={`whitespace-pre-wrap text-sm leading-relaxed ${hasError ? "text-destructive" : "text-foreground"
+                  }`}
                 data-testid={hasError ? "output-error" : "output-result"}
               >
                 {output}

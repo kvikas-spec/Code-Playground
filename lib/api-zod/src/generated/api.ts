@@ -143,6 +143,26 @@ export const GetSnippetResponse = zod.object({
 
 
 /**
+ * @summary Update a saved snippet
+ */
+export const UpdateSnippetParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const UpdateSnippetBody = zod.object({
+  "title": zod.string(),
+  "code": zod.string()
+})
+
+export const UpdateSnippetResponse = zod.object({
+  "id": zod.number(),
+  "title": zod.string(),
+  "code": zod.string(),
+  "createdAt": zod.string()
+})
+
+
+/**
  * @summary Delete a saved snippet
  */
 export const DeleteSnippetParams = zod.object({

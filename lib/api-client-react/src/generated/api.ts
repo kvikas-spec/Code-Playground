@@ -875,6 +875,78 @@ export function useGetSnippet<TData = Awaited<ReturnType<typeof getSnippet>>, TE
 
 
 
+export const getUpdateSnippetUrl = (id: number,) => {
+
+
+
+
+  return `/api/snippets/${id}`
+}
+
+/**
+ * @summary Update a saved snippet
+ */
+export const updateSnippet = async (id: number,
+    snippetInput: SnippetInput, options?: RequestInit): Promise<Snippet> => {
+
+  return customFetch<Snippet>(getUpdateSnippetUrl(id),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      snippetInput,)
+  }
+);}
+
+
+
+
+export const getUpdateSnippetMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateSnippet>>, TError,{id: number;data: BodyType<SnippetInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateSnippet>>, TError,{id: number;data: BodyType<SnippetInput>}, TContext> => {
+
+const mutationKey = ['updateSnippet'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateSnippet>>, {id: number;data: BodyType<SnippetInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updateSnippet(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateSnippetMutationResult = NonNullable<Awaited<ReturnType<typeof updateSnippet>>>
+    export type UpdateSnippetMutationBody = BodyType<SnippetInput>
+    export type UpdateSnippetMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Update a saved snippet
+ */
+export const useUpdateSnippet = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateSnippet>>, TError,{id: number;data: BodyType<SnippetInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateSnippet>>,
+        TError,
+        {id: number;data: BodyType<SnippetInput>},
+        TContext
+      > => {
+      return useMutation(getUpdateSnippetMutationOptions(options));
+    }
+
 export const getDeleteSnippetUrl = (id: number,) => {
 
 

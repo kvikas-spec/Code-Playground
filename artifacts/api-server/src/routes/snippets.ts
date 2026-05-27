@@ -1,7 +1,13 @@
 import { Router, type IRouter } from "express";
 import { eq } from "drizzle-orm";
 import { db, snippetsTable } from "@workspace/db";
-import { CreateSnippetBody, GetSnippetParams, DeleteSnippetParams } from "@workspace/api-zod";
+import {
+  CreateSnippetBody,
+  DeleteSnippetParams,
+  GetSnippetParams,
+  UpdateSnippetBody,
+  UpdateSnippetParams,
+} from "@workspace/api-zod";
 
 const router: IRouter = Router();
 
@@ -26,6 +32,8 @@ router.post("/snippets", async (req, res): Promise<void> => {
 
 router.get("/snippets/:id", async (req, res): Promise<void> => {
   const params = GetSnippetParams.safeParse(req.params);
+  console.log("params", params);
+  
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
     return;
@@ -35,6 +43,34 @@ router.get("/snippets/:id", async (req, res): Promise<void> => {
     .select()
     .from(snippetsTable)
     .where(eq(snippetsTable.id, params.data.id));
+
+  if (!snippet) {
+    res.status(404).json({ error: "Snippet not found" });
+    return;
+  }
+
+  res.json(snippet);
+});
+
+router.put("/snippets/:id", async (req, res): Promise<void> => {
+
+  const params = UpdateSnippetParams.safeParse(req.params);
+  if (!params.success) {
+    res.status(400).json({ error: params.error.message });
+    return;
+  }
+
+  const parsed = UpdateSnippetBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
+    return;
+  }
+
+  const [snippet] = await db
+    .update(snippetsTable)
+    .set(parsed.data)
+    .where(eq(snippetsTable.id, params.data.id))
+    .returning();
 
   if (!snippet) {
     res.status(404).json({ error: "Snippet not found" });
