@@ -23,6 +23,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import PackagesPanel from "@/components/packages-panel";
+import type { Snippet } from "@workspace/api-client-react";
 
 const TEMPLATES = [
   {
@@ -126,6 +127,7 @@ export default function Playground() {
   const deleteSnippet = useDeleteSnippet();
   const { data: snippets } = useListSnippets();
   const { data: packages } = useListPackages({ query: { queryKey: getListPackagesQueryKey() } });
+  const savedSnippets: Snippet[] = Array.isArray(snippets) ? snippets : [];
 
   const handleRun = () => {
     runCode.mutate(
@@ -182,7 +184,6 @@ export default function Playground() {
       handleRun();
     }
   };
-
   return (
     <div className="flex flex-col h-full" onKeyDown={handleKeyDown}>
       {/* Toolbar */}
@@ -229,11 +230,11 @@ export default function Playground() {
                 {t.label}
               </DropdownMenuItem>
             ))}
-            {snippets && snippets.length > 0 && (
+            {savedSnippets.length > 0 && (
               <>
                 <DropdownMenuSeparator />
                 <DropdownMenuLabel className="text-xs text-muted-foreground">Saved snippets</DropdownMenuLabel>
-                {snippets.map((s) => (
+                {savedSnippets.map((s) => (
                   <DropdownMenuItem
                     key={s.id}
                     className="flex items-center justify-between text-sm group"

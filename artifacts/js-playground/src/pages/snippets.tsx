@@ -5,6 +5,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import type { Snippet } from "@workspace/api-client-react";
 
 function formatDate(iso: string) {
   const d = new Date(iso);
@@ -18,6 +19,7 @@ export default function Snippets() {
 
   const { data: snippets, isLoading } = useListSnippets();
   const deleteSnippet = useDeleteSnippet();
+  const savedSnippets: Snippet[] = Array.isArray(snippets) ? snippets : [];
 
   const handleDelete = (id: number, title: string) => {
     deleteSnippet.mutate(
@@ -42,9 +44,9 @@ export default function Snippets() {
         <div className="flex items-center gap-2">
           <Bookmark className="w-4 h-4 text-primary" />
           <h2 className="text-sm font-semibold">Saved Snippets</h2>
-          {snippets && (
+          {savedSnippets.length > 0 && (
             <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-              {snippets.length}
+              {savedSnippets.length}
             </span>
           )}
         </div>
@@ -71,7 +73,7 @@ export default function Snippets() {
               </div>
             ))}
           </div>
-        ) : !snippets || snippets.length === 0 ? (
+        ) : savedSnippets.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full gap-3 text-muted-foreground">
             <Bookmark className="w-10 h-10 opacity-30" />
             <p className="text-sm">No saved snippets yet</p>
@@ -87,7 +89,7 @@ export default function Snippets() {
           </div>
         ) : (
           <div className="divide-y divide-border">
-            {snippets.map((snippet) => (
+            {savedSnippets.map((snippet) => (
               <div
                 key={snippet.id}
                 className="group px-4 py-4 hover:bg-accent/30 transition-colors"
